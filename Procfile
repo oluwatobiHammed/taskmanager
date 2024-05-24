@@ -1,2 +1,1 @@
-web: gunicorn run:app --workers=1
-
+web: python run.py
