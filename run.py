@@ -3,8 +3,9 @@ from taskmanager import app, db
 
 
 if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
+    if os.environ.get("DEVELOPMENT") == "True":
+        with app.app_context():
+            db.create_all()
     print("Tables created.")
     app.run(
         host=os.environ.get("IP"),
