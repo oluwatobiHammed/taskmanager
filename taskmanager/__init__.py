@@ -1,10 +1,8 @@
 import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from flask_pymongo import PyMongo
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError, ConfigurationError
-from bson.objectid import ObjectId
 from dotenv import load_dotenv
 import certifi
 if os.path.exists("env.py"):

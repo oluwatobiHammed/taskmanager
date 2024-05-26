@@ -2,6 +2,8 @@ from flask import (
     Flask, flash, render_template,
     redirect, request, session, url_for)
 from werkzeug.security import generate_password_hash, check_password_hash
+from bson.objectid import ObjectId
+from flask_pymongo import PyMongo
 from taskmanager import app, db, mongo
 from taskmanager.models import Category, Task
 import os
@@ -91,17 +93,42 @@ def add_task():
     
     return render_template("add_task.html", categories=categories)
 
-@app.route("/edit_task/<int:task_id>", methods=["GET", "POST"])
+@app.route("/edit_task/<task_id>", methods=["GET", "POST"])
 def edit_task(task_id):
-    task = Task.query.get_or_404(task_id)
-    categories = list(Category.query.order_by(Category.category_name).all())
+  
     if request.method == "POST":
-        task.task_name = request.form.get("task_name")
-        task.task_description = request.form.get("task_description")
-        task.is_urgent = bool(True if request.form.get("is_urgent") else False)
-        task.due_date = request.form.get("due_date")
-        task.category_id = request.form.get("category_id")
-        db.session.commit()
+
+        if os.environ.get("IS_SQL_DB") == "True":
+           task.task_name = request.form.get("task_name")
+           task.task_description = request.form.get("task_description")
+           task.is_urgent = bool(True if request.form.get("is_urgent") else False)
+           task.due_date = request.form.get("due_date")
+           task.category_id = request.form.get("category_id")
+           db.session.commit()
+        else:
+            is_urgent = "on" if request.form.get("is_urgent") else "off"
+            task = {
+            "category_name": request.form.get("category_name"),
+            "task_name": request.form.get("task_name"),
+            "task_description": request.form.get("task_description"),
+            "is_urgent": is_urgent,
+            "due_date": request.form.get("due_date"),
+            "created_by": session["user"]
+            }
+            
+   
+    
+        if os.environ.get("IS_SQL_DB") == "True":
+           task = Task.query.get_or_404(task_id)
+        else:
+          task = mongo.tasks.update_one({"_id": ObjectId(task_id)}, {"$set": task})
+
+        flash("Task Successfully Updated")
+    if os.environ.get("IS_SQL_DB") == "True":
+       categories = list(Category.query.order_by(Category.category_name).all())
+    else:
+       categories = mongo.categories.find().sort("category_name", 1)
+       task = mongo.tasks.find_one({"_id": ObjectId(task_id)}) 
     return render_template("edit_task.html", task=task, categories=categories)
 
 @app.route("/delete_task/<int:task_id>")
