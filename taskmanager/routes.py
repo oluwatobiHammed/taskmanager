@@ -12,7 +12,7 @@ import os
 def get_tasks():
 
     tasks =  list(Task.query.order_by(Task.id).all())  if os.environ.get("IS_SQL_DB") == "True" else list(mongo.tasks.find())
-    print(f"Tasks: {tasks}")
+
     return render_template("tasks.html", tasks=tasks)
 
 @app.route("/categories")
@@ -57,18 +57,38 @@ def delete_category(category_id):
 
 @app.route("/add_task", methods=["GET", "POST"])
 def add_task():
-    categories = list(Category.query.order_by(Category.category_name).all())
+
+    if os.environ.get("IS_SQL_DB") == "True":
+        categories = list(Category.query.order_by(Category.category_name).all())
+    else:
+        categories = mongo.categories.find().sort("category_name", 1)
+
+   
     if request.method == "POST":
+        is_urgent = "on" if request.form.get("is_urgent") else "off"
         task = Task(
             task_name=request.form.get("task_name"),
             task_description=request.form.get("task_description"),
             is_urgent=bool(True if request.form.get("is_urgent") else False),
             due_date=request.form.get("due_date"),
             category_id=request.form.get("category_id")
-        )
-        db.session.add(task)
-        db.session.commit()
-        return redirect(url_for("home"))
+        ) if os.environ.get("IS_SQL_DB") == "True" else {
+            "category_name": request.form.get("category_name"),
+            "task_name": request.form.get("task_name"),
+            "task_description": request.form.get("task_description"),
+            "is_urgent": is_urgent,
+            "due_date": request.form.get("due_date"),
+            "created_by": session["user"]
+        }
+
+        if os.environ.get("IS_SQL_DB") == "True":
+              db.session.add(task)
+              db.session.commit()
+        else:
+            mongo.tasks.insert_one(task)
+        flash("Task added successfully!")
+        return redirect(url_for("get_tasks"))
+    
     return render_template("add_task.html", categories=categories)
 
 @app.route("/edit_task/<int:task_id>", methods=["GET", "POST"])

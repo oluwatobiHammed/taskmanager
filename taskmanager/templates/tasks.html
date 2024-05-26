@@ -1,36 +1,26 @@
 {% extends "base.html" %}
 {% block content %}
 
-<h3 class="light-blue-text text-darken-4 center-align">Tasks</h3>
+    <h3 class="light-blue-text text-darken-4 center-align">All Tasks</h3>
 
-<div class="row">
-    <div class="col s12 center-align">
-        <a href="{{ url_for('add_task') }}" class="btn-large light-blue darken-2">
-            Add Task <i class="fas fa-plus-square right"></i>
-        </a>
-    </div>
-</div>
-
-<ul class="collapsible">
-    {% for task in tasks|sort(attribute="due_date") %}
-    <li>
-        <div class="collapsible-header white-text light-blue darken-4">
-            <i class="fas fa-caret-down"></i>
-            <strong>{{ task.task_name }}</strong> : 
-            {% if task.is_urgent == True %}
-                <i class="fas fa-exclamation-circle light-blue-text text-lighten-2"></i>
-            {% endif %}
-        </div>
-        <div class="collapsible-body">
-            <strong>{{ task.category }}</strong>
-            <p>{{ task.task_description }}</p>
-            <p>
-                <a href="" class="btn green accent-4">Edit</a>
-                <a href="" class="btn red">Delete</a>
-            </p>
-        </div>
-    </li>
-    {% endfor %}
-</ul>
+    <ul class="collapsible">
+        {% for task in tasks %}
+        <li>
+            <div class="collapsible-header white-text light-blue darken-4 text-shadow">
+                <i class="fas fa-caret-down"></i>
+                <strong>{{ task.task_name }}</strong> : {{ task.due_date }}
+                {% if task.is_urgent == "on" %}
+                    <i class="fas fa-exclamation-circle light-blue-text text-lighten-2 tooltipped"
+                        data-position="right" data-tooltip="URGENT!"></i>
+                {% endif %}
+            </div>
+            <div class="collapsible-body">
+                <strong>{{ task.category_name }}</strong>
+                <p>{{ task.task_description }}</p>
+                <p><em>by: {{ task.created_by }}</em></p>
+            </div>
+        </li>
+        {% endfor %}
+    </ul>
 
 {% endblock %}
