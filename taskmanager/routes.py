@@ -1,11 +1,15 @@
 from flask import flash, render_template, request, redirect, url_for
-from taskmanager import app, db
+from taskmanager import app, db, mongo
 from taskmanager.models import Category, Task
+import os
 
 
 @app.route("/")
+@app.route("/get_tasks")
 def home():
-    tasks = list(Task.query.order_by(Task.id).all())
+
+    tasks =  list(Task.query.order_by(Task.id).all())  if os.environ.get("IS_SQL_DB") == "True" else list(mongo.tasks.find())
+    print(f"Tasks: {tasks}")
     return render_template("tasks.html", tasks=tasks)
 
 @app.route("/categories")

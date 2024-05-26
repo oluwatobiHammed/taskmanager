@@ -16,7 +16,7 @@
     <li>
         <div class="collapsible-header white-text light-blue darken-4">
             <i class="fas fa-caret-down"></i>
-            <strong>{{ task.task_name }}</strong> : {{ task.due_date.strftime("%d %B, %Y") }}
+            <strong>{{ task.task_name }}</strong> : 
             {% if task.is_urgent == True %}
                 <i class="fas fa-exclamation-circle light-blue-text text-lighten-2"></i>
             {% endif %}
@@ -25,8 +25,8 @@
             <strong>{{ task.category }}</strong>
             <p>{{ task.task_description }}</p>
             <p>
-                <a href="{{ url_for('edit_task', task_id=task.id) }}" class="btn green accent-4">Edit</a>
-                <a href="{{ url_for('delete_task', task_id=task.id) }}" class="btn red">Delete</a>
+                <a href="" class="btn green accent-4">Edit</a>
+                <a href="" class="btn red">Delete</a>
             </p>
         </div>
     </li>
