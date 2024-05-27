@@ -17,44 +17,81 @@ def get_tasks():
 
     return render_template("tasks.html", tasks=tasks)
 
-@app.route("/categories")
-def categories():
-    categories = list(Category.query.order_by(Category.category_name).all())
+
+@app.route("/search", methods=["GET", "POST"])
+def search():
+    query = request.form.get("query")
+    tasks = list(mongo.tasks.find({"$text": {"$search": query}}))
+    return render_template("tasks.html", tasks=tasks)
+
+
+
+@app.route("/get_categories")
+def get_categories():
+    
+    if os.environ.get("IS_SQL_DB") == "True":
+       categories = list(Category.query.order_by(Category.category_name).all()) 
+    else:
+       categories = list(mongo.categories.find().sort("category_name", 1))
+    
     return render_template("categories.html", categories=categories)
 
 @app.route("/add_category", methods=["GET", "POST"])
 def add_category():
  if request.method == 'POST':
-        category_name = request.form.get('category_name')
+    category_name = request.form.get('category_name')
+    if os.environ.get("IS_SQL_DB") == "True":
         existing_category = Category.query.filter_by(category_name=category_name).first()
+    else:
+        existing_category = mongo.categories.find_one({"category_name": category_name})
         
-        if existing_category:
-            flash(f'Category {category_name} already exists.', 'warning')
-        else:
+    if existing_category:
+        flash(f'Category {category_name} already exists.', 'warning')
+    else:
+        if os.environ.get("IS_SQL_DB") == "True":
             new_category = Category(category_name=category_name)
             db.session.add(new_category)
             db.session.commit()
-            flash(f'Category {category_name} added successfully!', 'success')
+        else:
+            category = {
+            "category_name": category_name
+            }
+            mongo.categories.insert_one(category)
+
+        flash(f'Category {category_name} added successfully!', 'success')
         
-        return redirect(url_for('categories'))
+        return redirect(url_for('get_categories'))
     
  return render_template('add_category.html')
 
-@app.route("/edit_category/<int:category_id>", methods=["GET", "POST"])
+@app.route("/edit_category/<category_id>", methods=["GET", "POST"])
 def edit_category(category_id):
-    category = Category.query.get_or_404(category_id)
+    if os.environ.get("IS_SQL_DB") == "True":
+       category = Category.query.get_or_404(category_id)
+    else:
+       category = mongo.categories.find_one({"_id": ObjectId(category_id)})
     if request.method == "POST":
-        category.category_name = request.form.get("category_name")
-        db.session.commit()
-        return redirect(url_for("categories"))
+        if os.environ.get("IS_SQL_DB") == "True":
+            category.category_name = request.form.get("category_name")
+            db.session.commit()
+        else:
+            mongo.categories.update_one({"_id": ObjectId(category_id)}, {"$set": {"category_name": request.form.get("category_name")}})
+        flash("Category updated successfully!")
+
+        return redirect(url_for("get_categories"))
     return render_template("edit_category.html", category=category)
 
-@app.route("/delete_category/<int:category_id>")
+@app.route("/delete_category/<category_id>")
 def delete_category(category_id):
-    category = Category.query.get_or_404(category_id)
-    db.session.delete(category)
-    db.session.commit()
-    return redirect(url_for("categories"))
+    if os.environ.get("IS_SQL_DB") == "True":
+       category = Category.query.get_or_404(category_id)
+       db.session.delete(category)
+       db.session.commit()
+    else:
+        mongo.categories.delete_one({"_id": ObjectId(category_id)})
+    flash("Category deleted successfully!")
+
+    return redirect(url_for("get_categories"))
 
 
 @app.route("/add_task", methods=["GET", "POST"])
